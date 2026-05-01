@@ -1,57 +1,119 @@
-import { Video, Mic, MicOff, VideoOff } from "lucide-react";
-import { Button } from "@/components/ui/button";
-import { useState } from "react";
+import { useEffect, useState } from "react";
+import {
+  LiveKitRoom,
+  GridLayout,
+  ParticipantTile,
+  RoomAudioRenderer,
+  ControlBar,
+  useTracks,
+} from "@livekit/components-react";
+import { Track } from "livekit-client";
+import "@livekit/components-styles";
+import { useServerFn } from "@tanstack/react-start";
+import { getLiveKitToken } from "@/server/livekit.functions";
+import { useAuth } from "@/contexts/AuthContext";
+import { Loader2, VideoOff } from "lucide-react";
 
-/**
- * Video/audio placeholder.
- * Wire LiveKit here once LIVEKIT_URL / API key / secret are added.
- * For now: shows participant tiles with controls (UI-only).
- */
-export function VideoStage({ participantCount }: { participantCount: number }) {
-  const [audio, setAudio] = useState(false);
-  const [video, setVideo] = useState(false);
+function Stage() {
+  const tracks = useTracks(
+    [
+      { source: Track.Source.Camera, withPlaceholder: true },
+      { source: Track.Source.ScreenShare, withPlaceholder: false },
+    ],
+    { onlySubscribed: false }
+  );
+  return (
+    <GridLayout tracks={tracks} style={{ height: "100%" }}>
+      <ParticipantTile />
+    </GridLayout>
+  );
+}
+
+export function VideoStage({ roomId }: { roomId: string; participantCount?: number }) {
+  const { user } = useAuth();
+  const fetchToken = useServerFn(getLiveKitToken);
+  const [token, setToken] = useState<string | null>(null);
+  const [url, setUrl] = useState<string | null>(null);
+  const [error, setError] = useState<string | null>(null);
+  const [connect, setConnect] = useState(false);
+
+  useEffect(() => {
+    if (!user || !connect) return;
+    let active = true;
+    (async () => {
+      try {
+        const displayName =
+          (user.user_metadata?.display_name as string | undefined) ||
+          (user.user_metadata?.full_name as string | undefined) ||
+          user.email?.split("@")[0] ||
+          "Learner";
+        const res = await fetchToken({ data: { roomId, displayName } });
+        if (!active) return;
+        setToken(res.token);
+        setUrl(res.url);
+      } catch (e) {
+        if (!active) return;
+        setError(e instanceof Error ? e.message : "Failed to get token");
+      }
+    })();
+    return () => {
+      active = false;
+    };
+  }, [user, roomId, connect, fetchToken]);
+
+  if (!connect) {
+    return (
+      <div className="glass rounded-2xl p-8 flex flex-col items-center justify-center text-center min-h-[320px]">
+        <div className="w-14 h-14 rounded-full bg-gradient-brand flex items-center justify-center shadow-glow mb-4">
+          <VideoOff className="w-6 h-6 text-white" />
+        </div>
+        <h3 className="text-lg font-semibold mb-1">Join the video room</h3>
+        <p className="text-sm text-muted-foreground mb-4 max-w-sm">
+          Turn on your camera & mic to study live with others on this topic.
+        </p>
+        <button
+          onClick={() => setConnect(true)}
+          className="px-5 py-2.5 rounded-lg bg-gradient-brand text-white text-sm font-medium shadow-glow hover:opacity-90 transition"
+        >
+          Join video
+        </button>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="glass rounded-2xl p-6 text-center text-sm text-destructive">
+        {error}
+      </div>
+    );
+  }
+
+  if (!token || !url) {
+    return (
+      <div className="glass rounded-2xl p-8 flex items-center justify-center min-h-[320px]">
+        <Loader2 className="w-5 h-5 animate-spin text-muted-foreground" />
+      </div>
+    );
+  }
 
   return (
-    <div className="glass rounded-2xl p-6 flex flex-col items-center">
-      <div className="grid grid-cols-2 md:grid-cols-3 gap-3 w-full mb-4">
-        {Array.from({ length: Math.max(participantCount, 3) }).slice(0, 6).map((_, i) => (
-          <div
-            key={i}
-            className="aspect-video rounded-xl bg-surface-elevated border border-border flex items-center justify-center relative overflow-hidden"
-          >
-            <div className="absolute inset-0 bg-gradient-brand opacity-5" />
-            <div className="w-12 h-12 rounded-full bg-gradient-brand flex items-center justify-center shadow-glow opacity-60">
-              <Video className="w-5 h-5 text-white" />
-            </div>
-            <div className="absolute bottom-2 left-2 text-xs text-muted-foreground bg-background/60 backdrop-blur px-2 py-0.5 rounded">
-              {i === 0 ? "You" : `Learner ${i + 1}`}
-            </div>
-          </div>
-        ))}
-      </div>
-
-      <div className="flex items-center gap-2">
-        <Button
-          size="icon"
-          variant={audio ? "hero" : "glow"}
-          onClick={() => setAudio(!audio)}
-          title={audio ? "Mute mic" : "Unmute mic"}
-        >
-          {audio ? <Mic className="w-4 h-4" /> : <MicOff className="w-4 h-4" />}
-        </Button>
-        <Button
-          size="icon"
-          variant={video ? "hero" : "glow"}
-          onClick={() => setVideo(!video)}
-          title={video ? "Stop video" : "Start video"}
-        >
-          {video ? <Video className="w-4 h-4" /> : <VideoOff className="w-4 h-4" />}
-        </Button>
-      </div>
-
-      <p className="mt-4 text-xs text-muted-foreground text-center max-w-md">
-        Audio/video uses LiveKit. Add your <code className="text-accent">LIVEKIT_URL</code>, API key & secret in Cloud settings to activate.
-      </p>
+    <div className="glass rounded-2xl overflow-hidden" data-lk-theme="default">
+      <LiveKitRoom
+        token={token}
+        serverUrl={url}
+        connect={true}
+        video={true}
+        audio={true}
+        style={{ height: "480px" }}
+        onDisconnected={() => setConnect(false)}
+      >
+        <div style={{ height: "calc(100% - 60px)" }}>
+          <Stage />
+        </div>
+        <RoomAudioRenderer />
+        <ControlBar variation="minimal" controls={{ leave: true, screenShare: true }} />
+      </LiveKitRoom>
     </div>
   );
 }

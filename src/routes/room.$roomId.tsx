@@ -136,7 +136,7 @@ function Room() {
         <div className="grid lg:grid-cols-[1fr_360px] gap-4 md:gap-6 h-full">
           {/* Left: video + timer */}
           <div className="flex flex-col gap-4 md:gap-6 min-h-0">
-            <VideoStage participantCount={participantCount} />
+            <VideoStage roomId={roomId} participantCount={participantCount} />
             <div className="grid md:grid-cols-2 gap-4 md:gap-6 min-h-[400px]">
               <PomodoroTimer />
               <div className="md:hidden lg:hidden">
