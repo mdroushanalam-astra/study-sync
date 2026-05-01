@@ -7,6 +7,7 @@ import { PomodoroTimer } from "@/components/PomodoroTimer";
 import { AIHelper } from "@/components/AIHelper";
 import { RoomChat } from "@/components/RoomChat";
 import { VideoStage } from "@/components/VideoStage";
+import { InviteButton } from "@/components/InviteButton";
 import { Button } from "@/components/ui/button";
 import { ArrowLeft, Users, Loader2 } from "lucide-react";
 import { toast } from "sonner";
@@ -124,10 +125,13 @@ function Room() {
               <h1 className="text-lg md:text-xl font-bold truncate">{room.topic}</h1>
             </div>
           </div>
-          <div className="flex items-center gap-2 px-3 py-1.5 rounded-full glass shrink-0">
-            <Users className="w-3.5 h-3.5 text-accent" />
-            <span className="text-sm font-medium">{participantCount}</span>
-            <span className="text-xs text-muted-foreground hidden sm:inline">studying</span>
+          <div className="flex items-center gap-2 shrink-0">
+            <div className="flex items-center gap-2 px-3 py-1.5 rounded-full glass">
+              <Users className="w-3.5 h-3.5 text-accent" />
+              <span className="text-sm font-medium">{participantCount}</span>
+              <span className="text-xs text-muted-foreground hidden sm:inline">studying</span>
+            </div>
+            <InviteButton topic={room.topic} />
           </div>
         </div>
       </div>
