@@ -8,6 +8,7 @@ import { AIHelper } from "@/components/AIHelper";
 import { RoomChat } from "@/components/RoomChat";
 import { VideoStage } from "@/components/VideoStage";
 import { InviteButton } from "@/components/InviteButton";
+import { RoomRules } from "@/components/RoomRules";
 import { Button } from "@/components/ui/button";
 import { ArrowLeft, Users, Loader2 } from "lucide-react";
 import { toast } from "sonner";
@@ -131,6 +132,7 @@ function Room() {
               <span className="text-sm font-medium">{participantCount}</span>
               <span className="text-xs text-muted-foreground hidden sm:inline">studying</span>
             </div>
+            <RoomRules />
             <InviteButton topic={room.topic} />
           </div>
         </div>
