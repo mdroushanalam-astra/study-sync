@@ -1,4 +1,4 @@
-# StudySync — Real-Time WebRTC Collaborative Campus 🎓📹
+# StudySync:  Real-Time WebRTC Collaborative Campus 🎓📹
 
 <div align="center">
 
